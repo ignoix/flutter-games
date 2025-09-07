@@ -7,6 +7,7 @@ import './widgets/hand_row.dart';
 import 'widgets/meld_row.dart';
 import 'widgets/river_panel.dart';
 import 'widgets/action_bar.dart';
+import '../game/score.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -125,15 +126,40 @@ class _GamePageState extends State<GamePage> {
                 }
               },
               onWin: (){
-                // 这里仅展示自摸成功（终局 UI 可自定）
                 if (eng.canSelfWin()) {
-                  showDialog(context: context, builder: (_)=> AlertDialog(
-                    title: const Text('胡了！'),
-                    content: const Text('计分规则留给你继续完善～'),
-                    actions: [TextButton(onPressed: ()=> Navigator.pop(context), child: const Text('OK'))],
-                  ));
+                    final me = eng.players[0];
+                    final result = ScoreCalculator.evaluate(
+                    concealed: me.hand,
+                    melds: me.melds,
+                    flowers: me.flowers,
+                    selfDraw: true, // 这里先只处理自摸
+                    dealer: eng.current == eng.dealer,
+                    );
+                    showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                        title: const Text('胡了！'),
+                        content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                            Text("番型：${result.patterns.join(', ')}"),
+                            Text("番数：${result.fan} 番"),
+                            Text("台数：${result.tai} 台"),
+                            Text("得分：${result.score}"),
+                        ],
+                        ),
+                        actions: [
+                        TextButton(
+                            onPressed: ()=> Navigator.pop(context),
+                            child: const Text('OK'),
+                        )
+                        ],
+                    ),
+                    );
                 }
-              },
+            },
+
               onPass: (){
                 // 只有 react 时才有过
                 if (eng.phase == TurnPhase.react) {
